@@ -8,6 +8,7 @@ use nym_mixnet_contract_common::{GatewayBond, IdentityKeyRef, MixId};
 use nym_sphinx_addressing::nodes::NodeIdentity;
 use nym_sphinx_types::Node as SphinxNode;
 use rand::{CryptoRng, Rng};
+use std::array::TryFromSliceError;
 use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::fmt::{self, Display, Formatter};
