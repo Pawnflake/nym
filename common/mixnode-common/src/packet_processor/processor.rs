@@ -10,8 +10,8 @@ use nym_sphinx_forwarding::packet::MixPacket;
 use nym_sphinx_framing::packet::FramedNymPacket;
 use nym_sphinx_params::{PacketSize, PacketType};
 use nym_sphinx_types::{
-    Delay as SphinxDelay, DestinationAddressBytes, NodeAddressBytes, NymPacket, Payload,
-    PrivateKey, ProcessedPacket,
+    Delay as SphinxDelay, DestinationAddressBytes, NodeAddressBytes, NymPacket, NymProcessedPacket,
+    Payload, PrivateKey, ProcessedPacket,
 };
 use std::convert::TryFrom;
 use std::sync::Arc;
@@ -56,10 +56,10 @@ impl SphinxPacketProcessor {
     fn perform_initial_packet_processing(
         &self,
         packet: NymPacket,
-    ) -> Result<ProcessedPacket, MixProcessingError> {
+    ) -> Result<NymProcessedPacket, MixProcessingError> {
         measure!({
             packet.process(&self.sphinx_key).map_err(|err| {
-                debug!("Failed to unwrap Sphinx packet: {err}");
+                info!("Failed to unwrap NymPacket packet: {err}");
                 MixProcessingError::NymPacketProcessingError(err)
             })
         })
@@ -73,7 +73,7 @@ impl SphinxPacketProcessor {
     fn perform_initial_unwrapping(
         &self,
         received: FramedNymPacket,
-    ) -> Result<ProcessedPacket, MixProcessingError> {
+    ) -> Result<NymProcessedPacket, MixProcessingError> {
         measure!({
             let packet = received.into_inner();
 
@@ -169,18 +169,44 @@ impl SphinxPacketProcessor {
     /// or a final hop.
     fn perform_final_processing(
         &self,
-        packet: ProcessedPacket,
+        packet: NymProcessedPacket,
         packet_size: PacketSize,
         packet_type: PacketType,
     ) -> Result<MixProcessingResult, MixProcessingError> {
         match packet {
-            ProcessedPacket::ForwardHop(packet, address, delay) => {
-                self.process_forward_hop(NymPacket::Sphinx(*packet), address, delay, packet_type)
+            NymProcessedPacket::Sphinx(packet) => {
+                match packet {
+                    ProcessedPacket::ForwardHop(packet, address, delay) => self
+                        .process_forward_hop(
+                            NymPacket::Sphinx(*packet),
+                            address,
+                            delay,
+                            packet_type,
+                        ),
+                    // right now there's no use for the surb_id included in the header - probably it should get removed from the
+                    // sphinx all together?
+                    ProcessedPacket::FinalHop(destination, _, payload) => {
+                        self.process_final_hop(destination, payload, packet_size, packet_type)
+                    }
+                }
             }
-            // right now there's no use for the surb_id included in the header - probably it should get removed from the
-            // sphinx all together?
-            ProcessedPacket::FinalHop(destination, _, payload) => {
-                self.process_final_hop(destination, payload, packet_size, packet_type)
+            NymProcessedPacket::Outfox(packet) => {
+                let next_address = *packet.next_address();
+                let packet = packet.into_packet();
+                if packet.is_final_hop() {
+                    Ok(MixProcessingResult::FinalHop(ProcessedFinalHop {
+                        destination: DestinationAddressBytes::from_bytes(next_address),
+                        forward_ack: None,
+                        message: packet.payload().to_vec(),
+                    }))
+                } else {
+                    let mix_packet = MixPacket::new(
+                        NymNodeRoutingAddress::try_from_bytes(&next_address)?,
+                        NymPacket::Outfox(packet),
+                        PacketType::Outfox,
+                    );
+                    Ok(MixProcessingResult::ForwardHop(mix_packet, None))
+                }
             }
         }
     }

@@ -235,6 +235,7 @@ pub trait FragmentPreparer {
             PacketType::Outfox => NymPacket::outfox_build(
                 packet_payload,
                 route.as_slice(),
+                &destination,
                 Some(packet_size.payload_size()),
             )?,
             PacketType::Mix => NymPacket::sphinx_build(

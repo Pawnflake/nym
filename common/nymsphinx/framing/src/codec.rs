@@ -154,11 +154,16 @@ mod packet_encoding {
             node4_pk,
         );
 
+        let destination = Destination::new(
+            DestinationAddressBytes::from_bytes([3u8; DESTINATION_ADDRESS_LENGTH]),
+            [4u8; IDENTIFIER_LENGTH],
+        );
+
         let route = &[node1, node2, node3, node4];
 
         let payload = vec![1; 48];
 
-        NymPacket::outfox_build(payload, route, Some(size.plaintext_size())).unwrap()
+        NymPacket::outfox_build(payload, route, &destination, Some(size.plaintext_size())).unwrap()
     }
 
     fn make_valid_sphinx_packet(size: PacketSize) -> NymPacket {

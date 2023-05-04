@@ -61,9 +61,12 @@ impl SurbAck {
         };
 
         let surb_ack_packet = match packet_type {
-            PacketType::Outfox => {
-                NymPacket::outfox_build(surb_ack_payload, route.as_slice(), Some(packet_size))?
-            }
+            PacketType::Outfox => NymPacket::outfox_build(
+                surb_ack_payload,
+                route.as_slice(),
+                &destination,
+                Some(packet_size),
+            )?,
             PacketType::Mix => NymPacket::sphinx_build(
                 packet_size,
                 surb_ack_payload,

@@ -3898,6 +3898,7 @@ dependencies = [
  "curve25519-dalek",
  "fastrand",
  "getrandom 0.2.9",
+ "log",
  "rand 0.7.3",
  "rayon",
  "sphinx-packet",
