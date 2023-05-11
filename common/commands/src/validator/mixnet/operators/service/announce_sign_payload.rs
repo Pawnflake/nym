@@ -14,6 +14,7 @@ use nym_mixnet_contract_common::{
 use nym_network_defaults::{
     DEFAULT_HTTP_API_LISTENING_PORT, DEFAULT_MIX_LISTENING_PORT, DEFAULT_VERLOC_LISTENING_PORT,
 };
+use nym_service_provider_directory_common::ServiceType::NetworkRequester;
 use nym_validator_client::nyxd::traits::MixnetQueryClient;
 use nym_validator_client::nyxd::CosmWasmCoin;
 
@@ -43,6 +44,13 @@ pub async fn create_payload(args: Args, client: SigningClient) {
     //    identity_key: args.identity_key,
     //    version: args.version,
     //};
+    let service = nym_service_provider_directory_common::Service {
+        nym_address: todo!(),
+        service_type: NetworkRequester,
+        announcer: todo!(),
+        block_height: todo!(),
+        deposit: todo!(),
+    };
 
     let coin = Coin::new(args.amount, denom);
 
