@@ -12,6 +12,7 @@ use serde::Serialize;
 pub type SignableMixNodeBondingMsg = SignableMessage<ContractMessageContent<MixnodeBondingPayload>>;
 pub type SignableGatewayBondingMsg = SignableMessage<ContractMessageContent<GatewayBondingPayload>>;
 pub type SignableFamilyJoinPermitMsg = SignableMessage<FamilyJoinPermit>;
+pub type SignableServiceProviderAnnounceMsg = SignableMessage<ContractMessageContent<ServiceProviderAnnounce>>;
 
 #[derive(Serialize)]
 pub struct MixnodeBondingPayload {
@@ -119,3 +120,26 @@ pub fn construct_family_join_permit(
 
 // TODO: depending on our threat model, we should perhaps extend it to include all _on_behalf methods
 // (update: but we trust our vesting contract since its compromise would be even more devastating so there's no need)
+
+#[derive(Serialize)]
+pub struct ServiceProviderAnnounce {
+    foo: String,
+}
+
+impl SigningPurpose for ServiceProviderAnnounce {
+    fn message_type() -> MessageType {
+        MessageType::new("service-provider-announce")
+    }
+}
+
+pub fn construct_service_provider_announce_sign_payload(
+    nonce: Nonce,
+    sender: Addr,
+    pledge: Coin,
+    foo: String,
+) -> SignableServiceProviderAnnounceMsg {
+    let payload = ServiceProviderAnnounce { foo };
+    let proxy = None;
+    let content = ContractMessageContent::new(sender, proxy, vec![pledge], payload);
+    SignableMessage::new(nonce, content)
+}
